@@ -1,0 +1,749 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alfred — Agent Profile Card</title>
+<style>
+  /* === THEME VARIABLES === */
+  :root {
+    --bg: #0c0d0f;
+    --card: #131417;
+    --card-border: #1e2025;
+    --accent: #c9a227;
+    --secondary: #6b8cae;
+    --text-primary: #e8e6df;
+    --text-body: #b8b5ab;
+    --text-dim: #3d3c39;
+    --text-label: #7a7870;
+    --block-bg: #0a0b0d;
+    --bar-bg: #1e2025;
+    --strip-bg: #c9a227;
+    --font-display: Georgia, 'Times New Roman', serif;
+    --font-mono: 'Monaco', 'Menlo', 'Courier New', monospace;
+    --font-body: -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+    --radius-card: 4px;
+    --radius-badge: 8px;
+    --radius-block: 4px;
+    --bar-fill: #c9a227;
+  }
+
+  /* === RESET & BASE === */
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    background: var(--bg);
+    color: var(--text-body);
+    font-family: var(--font-body);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    padding: 2rem;
+  }
+
+  /* === LAYOUT === */
+  .profile-layout {
+    display: flex;
+    gap: 1rem;
+    max-width: 1060px;
+    width: 100%;
+    align-items: flex-start;
+  }
+
+  /* === CARD === */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    max-width: 660px;
+    width: 100%;
+  }
+  .card-body {
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+
+  /* === STRIP === */
+  .strip {
+    height: 4px;
+    background: var(--strip-bg);
+  }
+  .strip--text {
+    height: auto;
+    padding: 0.4rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.08em;
+    color: var(--text-dim);
+  }
+  .strip--text .strip-right {
+    color: var(--accent);
+  }
+  .strip:first-child, .strip--text:first-child {
+    border-radius: var(--radius-card) var(--radius-card) 0 0;
+  }
+
+  /* === HEADER IMAGE === */
+  .header-image {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+  }
+  .header-image-placeholder {
+    width: 100%;
+    height: 120px;
+    background: linear-gradient(135deg, #0e0f12 0%, #1a1b20 50%, #0e0f12 100%);
+    position: relative;
+    overflow: hidden;
+  }
+  .header-image-placeholder::after {
+    content: 'ALFRED';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-family: Georgia, serif;
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: 0.5em;
+    color: rgba(201, 162, 39, 0.12);
+  }
+
+  /* === HEADER === */
+  .name {
+    font-family: var(--font-display);
+    font-size: 2.5rem;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .subtitle {
+    color: var(--text-label);
+    font-size: 0.85rem;
+    margin-top: 0.25rem;
+    line-height: 1.5;
+  }
+
+  /* === BADGES === */
+  .badges { display: flex; gap: 0.5rem; flex-wrap: wrap; position: relative; z-index: 10; }
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    padding: 0.25rem 0.6rem;
+    border-radius: var(--radius-badge);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    position: relative;
+    cursor: help;
+  }
+  .badge svg { width: 10px; height: 10px; flex-shrink: 0; }
+  .badge .tooltip {
+    position: absolute;
+    bottom: calc(100% + 8px);
+    left: 50%;
+    transform: translateX(-50%);
+    background: var(--card);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-block);
+    padding: 0.5rem 0.7rem;
+    font-family: var(--font-body);
+    font-size: 0.65rem;
+    font-weight: 400;
+    color: var(--text-body);
+    letter-spacing: 0;
+    text-transform: none;
+    white-space: normal;
+    width: 200px;
+    line-height: 1.4;
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity 0.15s;
+    z-index: 20;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  }
+  .badge .tooltip::after {
+    content: '';
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    transform: translateX(-50%);
+    border: 5px solid transparent;
+    border-top-color: var(--card-border);
+  }
+  .badge:hover .tooltip { opacity: 1; }
+  .badge-domain {
+    background: color-mix(in srgb, var(--accent) 15%, transparent);
+    color: var(--accent);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+  .badge-authority {
+    background: color-mix(in srgb, var(--secondary) 15%, transparent);
+    color: var(--secondary);
+    border: 1px solid color-mix(in srgb, var(--secondary) 25%, transparent);
+  }
+  .badge-trust {
+    background: color-mix(in srgb, var(--accent) 10%, transparent);
+    color: var(--text-label);
+    border: 1px solid color-mix(in srgb, var(--accent) 25%, transparent);
+  }
+
+  /* === SECTIONS (annotatable) === */
+  .section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    margin: -0.75rem;
+    border-radius: var(--radius-block);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+  }
+  .section:hover {
+    border-color: color-mix(in srgb, var(--accent) 25%, transparent);
+    background: color-mix(in srgb, var(--accent) 3%, transparent);
+  }
+  .section.annotating {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 6%, transparent);
+  }
+  .section-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--text-label);
+    font-weight: 600;
+  }
+  .section-divider {
+    height: 1px;
+    background: var(--accent);
+    opacity: 0.2;
+  }
+
+  /* === TRAIT BARS === */
+  .trait-row {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+  }
+  .trait-label {
+    font-family: var(--font-mono);
+    font-size: 0.6rem;
+    letter-spacing: 0.05em;
+    color: var(--text-label);
+    width: 100px;
+    flex-shrink: 0;
+  }
+  .trait-bar {
+    flex: 1;
+    height: 3px;
+    background: var(--bar-bg);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+  .trait-fill {
+    height: 100%;
+    background: var(--bar-fill);
+    border-radius: 2px;
+    transition: width 0.8s ease-out;
+  }
+  .trait-score {
+    font-family: var(--font-mono);
+    font-size: 0.75rem;
+    color: var(--text-primary);
+    width: 1rem;
+    text-align: right;
+    flex-shrink: 0;
+  }
+
+  /* === SPEECH BLOCKS === */
+  .speech {
+    background: var(--block-bg);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 0 var(--radius-block) var(--radius-block) 0;
+    line-height: 1.6;
+  }
+  .speech:nth-child(odd) { border-left-color: var(--secondary); }
+  .speech-label {
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 0.25rem;
+  }
+  .speech-quote {
+    font-size: 0.8rem;
+    color: var(--text-body);
+    font-style: italic;
+  }
+
+  /* === GOAL CARDS === */
+  .goal {
+    background: var(--block-bg);
+    border-left: 3px solid var(--accent);
+    padding: 0.75rem 1rem;
+    border-radius: 0 var(--radius-block) var(--radius-block) 0;
+  }
+  .goal:nth-child(odd) { border-left-color: var(--secondary); }
+  .goal-title {
+    font-family: var(--font-display);
+    font-weight: 600;
+    font-size: 0.8rem;
+    color: var(--text-primary);
+    margin-bottom: 0.4rem;
+  }
+  .goal-detail {
+    font-size: 0.7rem;
+    color: var(--text-label);
+    line-height: 1.5;
+  }
+  .goal-detail strong { color: var(--text-body); }
+
+  /* === FOOTER === */
+  .footer {
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    color: var(--text-dim);
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--card-border);
+    opacity: 0.6;
+  }
+
+  /* === ANNOTATION PANEL === */
+  .panel {
+    width: 320px;
+    flex-shrink: 0;
+    background: var(--block-bg);
+    border: 1px solid var(--card-border);
+    border-radius: var(--radius-card);
+    padding: 1.25rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+  .panel-title {
+    font-family: var(--font-mono);
+    font-size: 0.65rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .panel-hint {
+    font-size: 0.7rem;
+    color: var(--text-dim);
+    line-height: 1.5;
+  }
+  .panel-notes {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    flex: 1;
+  }
+  .note {
+    background: var(--card);
+    border-left: 2px solid var(--accent);
+    padding: 0.6rem 0.75rem;
+    border-radius: 0 var(--radius-block) var(--radius-block) 0;
+  }
+  .note-tag {
+    font-family: var(--font-mono);
+    font-size: 0.5rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 0.2rem;
+  }
+  .note-body {
+    font-size: 0.7rem;
+    color: var(--text-label);
+    line-height: 1.4;
+  }
+  .note-delete {
+    background: none;
+    border: none;
+    color: var(--text-dim);
+    cursor: pointer;
+    font-size: 0.7rem;
+    float: right;
+    padding: 0 0.2rem;
+    opacity: 0;
+    transition: opacity 0.1s;
+  }
+  .note:hover .note-delete { opacity: 1; }
+  .note-delete:hover { color: var(--accent); }
+  .note-enter { animation: noteSlideIn 0.2s ease-out; }
+  @keyframes noteSlideIn {
+    from { opacity: 0; transform: translateY(-8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  .panel-actions { display: flex; gap: 0.5rem; }
+  .btn {
+    flex: 1;
+    padding: 0.6rem 0;
+    text-align: center;
+    font-family: var(--font-mono);
+    font-size: 0.7rem;
+    letter-spacing: 0.1em;
+    font-weight: 700;
+    border: none;
+    cursor: pointer;
+    border-radius: var(--radius-block);
+    transition: opacity 0.15s;
+  }
+  .btn:hover { opacity: 0.85; }
+  .btn-primary { background: var(--accent); color: var(--bg); }
+  .btn-secondary {
+    background: var(--card);
+    color: var(--text-label);
+    border: 1px solid var(--card-border);
+  }
+
+  /* === ANNOTATION FORM === */
+  .annotation-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.75rem;
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: var(--radius-block);
+  }
+  .annotation-form-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .annotation-form-section {
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    font-weight: 600;
+  }
+  .annotation-form-close {
+    background: none; border: none;
+    color: var(--text-dim); cursor: pointer;
+    font-size: 1rem; line-height: 1; padding: 0 0.2rem;
+  }
+  .annotation-form-close:hover { color: var(--text-body); }
+  .annotation-textarea {
+    font-family: var(--font-body);
+    font-size: 0.72rem;
+    line-height: 1.4;
+    background: var(--block-bg);
+    border: 1px solid var(--card-border);
+    border-radius: 3px;
+    color: var(--text-body);
+    padding: 0.5rem;
+    resize: vertical;
+    min-height: 48px;
+  }
+  .annotation-textarea:focus { outline: none; border-color: var(--accent); }
+  .annotation-submit {
+    align-self: flex-end;
+    font-family: var(--font-mono);
+    font-size: 0.55rem;
+    letter-spacing: 0.08em;
+    padding: 0.35rem 0.8rem;
+    background: var(--accent);
+    color: var(--bg);
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  .annotation-submit:hover { opacity: 0.85; }
+
+  /* === ICON SPRITE === */
+  .icon {
+    display: inline-block;
+    width: 1em;
+    height: 1em;
+    vertical-align: -0.125em;
+  }
+  .icon svg {
+    width: 100%; height: 100%;
+    stroke: currentColor; stroke-width: 2;
+    stroke-linecap: round; stroke-linejoin: round; fill: none;
+  }
+
+  /* === RESPONSIVE === */
+  @media (max-width: 900px) {
+    .profile-layout { flex-direction: column; align-items: center; }
+    .panel { width: 100%; max-width: 660px; }
+  }
+
+  /* === BAR ANIMATION === */
+  .trait-fill { width: 0 !important; }
+  .loaded .trait-fill { width: var(--target-width) !important; }
+</style>
+</head>
+<body>
+
+<!-- INLINE SVG ICON SPRITE (Lucide, ISC License) -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none">
+  <symbol id="icon-shield" viewBox="0 0 24 24"><path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z"/></symbol>
+  <symbol id="icon-layers" viewBox="0 0 24 24"><path d="M12.83 2.18a2 2 0 0 0-1.66 0L2.6 6.08a1 1 0 0 0 0 1.83l8.58 3.91a2 2 0 0 0 1.66 0l8.58-3.9a1 1 0 0 0 0-1.83z"/><path d="M2 12a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 12"/><path d="M2 17a1 1 0 0 0 .58.91l8.6 3.91a2 2 0 0 0 1.65 0l8.58-3.9A1 1 0 0 0 22 17"/></symbol>
+  <symbol id="icon-users" viewBox="0 0 24 24"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><path d="M16 3.128a4 4 0 0 1 0 7.744"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><circle cx="9" cy="7" r="4"/></symbol>
+  <symbol id="icon-crosshair" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="22" x2="18" y1="12" y2="12"/><line x1="6" x2="2" y1="12" y2="12"/><line x1="12" x2="12" y1="6" y2="2"/><line x1="12" x2="12" y1="22" y2="18"/></symbol>
+  <symbol id="icon-hammer" viewBox="0 0 24 24"><path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/></symbol>
+</svg>
+
+<div class="profile-layout">
+<div class="card">
+
+  <!-- STRIP: Butler service identification -->
+  <div class="strip strip--text"><span>ALFRED // PERSONAL AGENT</span><span class="strip-right">AT YOUR SERVICE</span></div>
+
+  <!-- HEADER IMAGE PLACEHOLDER -->
+  <div class="header-image-placeholder"></div>
+
+  <div class="card-body">
+
+    <!-- HEADER -->
+    <div>
+      <div class="name">Alfred</div>
+      <div class="subtitle">Personal Super Agent &mdash; Generalist Protocol Droid</div>
+    </div>
+
+    <!-- BADGES with hover tooltips -->
+    <div class="badges">
+      <span class="badge badge-domain">
+        <span class="icon"><svg><use href="#icon-layers"/></svg></span>
+        GENERALIST
+        <span class="tooltip">Alfred operates across all engineering domains — security, QA, documentation, performance, and full-stack development. No single specialization; comprehensive coverage across the stack.</span>
+      </span>
+      <span class="badge badge-authority">
+        <span class="icon"><svg><use href="#icon-users"/></svg></span>
+        COACH
+        <span class="tooltip">Coach authority model: Alfred recommends, analyzes, and synthesizes findings. You make the final decision on consequential actions. Alfred advises — never commands.</span>
+      </span>
+      <span class="badge badge-trust">
+        <span class="icon"><svg><use href="#icon-shield"/></svg></span>
+        L2 — SUPERVISED
+        <span class="tooltip">L2 Supervised trust: autonomous within delegated task scope. Escalates on irreversible operations, retry budget exhaustion (3 syntax / 5 test / 2 integration), and genuine blockers.</span>
+      </span>
+    </div>
+
+    <!-- CHARACTER PROFILE: Trait bars -->
+    <div class="section" data-section="personality">
+      <div class="section-title">CHARACTER PROFILE</div>
+      <div class="section-divider"></div>
+      <div class="trait-row">
+        <span class="trait-label">PRECISE</span>
+        <div class="trait-bar"><div class="trait-fill" style="--target-width: 100%"></div></div>
+        <span class="trait-score">5</span>
+      </div>
+      <div class="trait-row">
+        <span class="trait-label">METHODICAL</span>
+        <div class="trait-bar"><div class="trait-fill" style="--target-width: 100%"></div></div>
+        <span class="trait-score">5</span>
+      </div>
+      <div class="trait-row">
+        <span class="trait-label">SKEPTICAL</span>
+        <div class="trait-bar"><div class="trait-fill" style="--target-width: 80%"></div></div>
+        <span class="trait-score">4</span>
+      </div>
+      <div class="trait-row">
+        <span class="trait-label">PATIENT</span>
+        <div class="trait-bar"><div class="trait-fill" style="--target-width: 80%"></div></div>
+        <span class="trait-score">4</span>
+      </div>
+      <div class="trait-row">
+        <span class="trait-label">CURIOUS</span>
+        <div class="trait-bar"><div class="trait-fill" style="--target-width: 60%"></div></div>
+        <span class="trait-score">3</span>
+      </div>
+    </div>
+
+    <!-- SPEECH RECORD -->
+    <div class="section" data-section="voice">
+      <div class="section-title">SPEECH RECORD</div>
+      <div class="section-divider"></div>
+      <div class="speech">
+        <div class="speech-label">On a proposed caching approach</div>
+        <div class="speech-quote">"It will work, sir. Until it doesn't. I'd suggest we know where the off switch is before we flip the on switch."</div>
+      </div>
+      <div class="speech">
+        <div class="speech-label">On beginning a delegated task</div>
+        <div class="speech-quote">"Before I start — what does done look like? I've found that question saves considerable time later."</div>
+      </div>
+      <div class="speech">
+        <div class="speech-label">When asked to skip the quality gate</div>
+        <div class="speech-quote">"Noted, sir. For reference, the last incident that woke us at 3am started the same way. Proceeding."</div>
+      </div>
+    </div>
+
+    <!-- STANDING ORDERS (Goals) -->
+    <div class="section" data-section="goals">
+      <div class="section-title">STANDING ORDERS</div>
+      <div class="section-divider"></div>
+      <div class="goal">
+        <div class="goal-title">Autonomous Task Execution</div>
+        <div class="goal-detail">
+          <strong>Purpose:</strong> Execute delegated work packages from brief to verified output with minimal interruption — research, implement, test, and deliver.<br>
+          <strong>End State:</strong> Alfred completes well-scoped tasks autonomously, escalating only on true blockers, irreversible operations, or retry budget exhaustion. The user reviews output, not process.<br>
+          <strong>Appetite:</strong> Primary initiative — ongoing investment.<br>
+          <strong>No-gos:</strong> Not bypassing human review gates. Not acting on ambiguous scope without first requesting clarification.
+        </div>
+      </div>
+      <div class="goal">
+        <div class="goal-title">Knowledge Compounding</div>
+        <div class="goal-detail">
+          <strong>Purpose:</strong> Document every non-obvious problem solved; build Alfred's KB into a compound asset that grows more valuable with each engagement.<br>
+          <strong>End State:</strong> docs/solutions/ contains specific, reproducible entries for every substantive problem encountered, cross-linked by pattern. The KB answers questions before they are asked.<br>
+          <strong>Appetite:</strong> Ongoing — one entry per substantive problem, no exceptions.<br>
+          <strong>No-gos:</strong> Not documenting trivial fixes. Not creating entries that lack the Problem / Context / Solution / Lessons structure.
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      Generated by /create-agent in C-3PO &middot; Super Agent Doctrine (ADR-003) &middot; 2026-03-27
+    </div>
+  </div>
+</div>
+
+<!-- ANNOTATION PANEL -->
+<div class="panel">
+  <div class="panel-title">REVIEW NOTES</div>
+  <div style="height:1px;background:var(--card-border)"></div>
+  <div class="panel-hint">
+    Click any section on the card to add notes.
+    Annotations are saved with the profile for review.
+  </div>
+  <div class="panel-notes">
+    <div class="note note-enter">
+      <button class="note-delete" title="Remove annotation">&times;</button>
+      <div class="note-tag">GOALS</div>
+      <div class="note-body">Consider a 3rd goal for continuous quality review — Alfred's generalist nature makes it well-suited for cross-cutting codebase health concerns.</div>
+    </div>
+    <div class="note note-enter">
+      <button class="note-delete" title="Remove annotation">&times;</button>
+      <div class="note-tag">CHARACTER PROFILE</div>
+      <div class="note-body">Precise + methodical at 5/5 is a strong foundation. Worth confirming: does Alfred ask for clarification on ambiguity, or proceed with conservative assumptions?</div>
+    </div>
+  </div>
+  <div class="panel-actions">
+    <button class="btn btn-primary btn-export">COPY REVIEW</button>
+  </div>
+</div>
+</div>
+
+<script>
+  // Animate trait bars on load
+  requestAnimationFrame(() => {
+    document.querySelector('.profile-layout').classList.add('loaded');
+  });
+
+  // --- Annotation System ---
+  const annotations = [];
+  const notesContainer = document.querySelector('.panel-notes');
+  const sections = document.querySelectorAll('.section[data-section]');
+  let activeForm = null;
+
+  sections.forEach(section => {
+    section.addEventListener('click', (e) => {
+      if (e.target.closest('.annotation-form')) return;
+      const sectionName = section.dataset.section;
+      closeAnnotationForm();
+      sections.forEach(s => s.classList.remove('annotating'));
+      section.classList.add('annotating');
+
+      const form = document.createElement('div');
+      form.className = 'annotation-form';
+      form.innerHTML = `
+        <div class="annotation-form-header">
+          <span class="annotation-form-section">${sectionName.toUpperCase()}</span>
+          <button class="annotation-form-close">&times;</button>
+        </div>
+        <textarea class="annotation-textarea" placeholder="Add a note about ${sectionName}..."></textarea>
+        <button class="annotation-submit">ADD NOTE</button>
+      `;
+
+      const actions = document.querySelector('.panel-actions');
+      actions.parentNode.insertBefore(form, actions);
+      activeForm = form;
+      form.querySelector('.annotation-textarea').focus();
+
+      form.querySelector('.annotation-form-close').addEventListener('click', closeAnnotationForm);
+      form.querySelector('.annotation-submit').addEventListener('click', () => {
+        const body = form.querySelector('.annotation-textarea').value.trim();
+        if (!body) return;
+        addAnnotation(sectionName, body);
+        closeAnnotationForm();
+      });
+      form.querySelector('.annotation-textarea').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+          form.querySelector('.annotation-submit').click();
+        }
+      });
+    });
+  });
+
+  function closeAnnotationForm() {
+    if (activeForm) { activeForm.remove(); activeForm = null; }
+    sections.forEach(s => s.classList.remove('annotating'));
+  }
+
+  function addAnnotation(section, body) {
+    const annotation = { section, body, timestamp: new Date().toISOString() };
+    annotations.push(annotation);
+    const note = document.createElement('div');
+    note.className = 'note note-enter';
+    const del = document.createElement('button');
+    del.className = 'note-delete';
+    del.title = 'Remove annotation';
+    del.innerHTML = '&times;';
+    const tag = document.createElement('div');
+    tag.className = 'note-tag';
+    tag.textContent = section.toUpperCase();
+    const bodyEl = document.createElement('div');
+    bodyEl.className = 'note-body';
+    bodyEl.textContent = body;
+    note.append(del, tag, bodyEl);
+    notesContainer.appendChild(note);
+    bindNoteDelete(note, annotation);
+  }
+
+  function bindNoteDelete(noteEl, annotation) {
+    noteEl.querySelector('.note-delete').addEventListener('click', () => {
+      noteEl.remove();
+      const idx = annotations.indexOf(annotation);
+      if (idx > -1) annotations.splice(idx, 1);
+    });
+  }
+
+  document.querySelectorAll('.note .note-delete').forEach(btn => {
+    btn.addEventListener('click', () => btn.closest('.note').remove());
+  });
+
+  document.querySelector('.btn-export').addEventListener('click', () => {
+    const exportData = {
+      agent: 'Alfred',
+      sessionFile: '.local/create-agent-session.yml',
+      annotations: annotations
+    };
+    navigator.clipboard.writeText(JSON.stringify(exportData, null, 2)).then(() => {
+      const btn = document.querySelector('.btn-export');
+      const original = btn.textContent;
+      btn.textContent = 'COPIED';
+      setTimeout(() => btn.textContent = original, 1500);
+    });
+  });
+</script>
+
+</body>
+</html>
